@@ -21,67 +21,79 @@
     <script>
         const messagesDisplay = document.getElementById('messages-display');
         const messageInput = document.getElementById('message-input');
-        // IMPORTANT: You MUST replace this with YOUR PUBLIC IP and PORT 3000
-        // Example: 'http://82.42.13.75:3000'
-        // This will only work if your laptop server is running and port forwarding is set up.
+
         const SERVER_URL = 'https://1182-86-9-172-166.ngrok-free.app';
 
-        // Function to fetch and display messages
         async function fetchMessages() {
             try {
-                // We're sending a GET request to the same server URL
                 const response = await fetch(SERVER_URL);
-                const messages = await response.json(); // Expect an array of messages
 
-                messagesDisplay.innerHTML = ''; // Clear existing messages
-                messages.forEach(msg => {
-                    const msgElement = document.createElement('div');
-                    msgElement.classList.add('message-item');
-                    msgElement.textContent = msg; // Display the message content
-                    messagesDisplay.appendChild(msgElement);
-                });
-                // Scroll to the bottom to show latest messages
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const responseText = await response.text();
+                console.log('Raw response from server:', responseText);
+
+                let messages = [];
+                try {
+                    messages = JSON.parse(responseText);
+                } catch (jsonError) {
+                    console.error('Error parsing JSON:', jsonError, 'Response Text:', responseText);
+                    throw new Error('Invalid JSON received from server.');
+                }
+
+                messagesDisplay.innerHTML = '';
+                if (Array.isArray(messages)) {
+                    messages.forEach(msg => {
+                        const msgElement = document.createElement('div');
+                        msgElement.classList.add('message-item');
+                        msgElement.textContent = typeof msg === 'string' ? msg : 'Invalid message format';
+                        messagesDisplay.appendChild(msgElement);
+                    });
+                } else {
+                     console.error('Messages is not an array:', messages);
+                     messagesDisplay.innerHTML = '<div class="error-message">Received invalid message format from server.</div>';
+                }
+
                 messagesDisplay.scrollTop = messagesDisplay.scrollHeight;
 
             } catch (error) {
                 console.error('Error fetching messages:', error);
-                messagesDisplay.innerHTML = '<div class="error-message">Could not load messages from laptop server. Make sure it\'s running and port forwarding is correct.</div>';
+                messagesDisplay.innerHTML = '<div class="error-message">Could not load messages. Make sure your laptop server and ngrok tunnel are running.<br>Error: ' + error.message + '</div>';
             }
         }
 
-        // Function to send a new message
         async function sendMessage() {
             const message = messageInput.value.trim();
-            if (!message) return; // Don't send empty messages
+            if (!message) return;
 
             try {
                 const response = await fetch(SERVER_URL, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json' // Send message as JSON
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ message: message }) // Wrap message in JSON object
+                    body: JSON.stringify({ message: message })
                 });
 
                 if (response.ok) {
-                    messageInput.value = ''; // Clear input field
-                    fetchMessages(); // Refresh messages to show the new one
+                    messageInput.value = '';
+                    fetchMessages();
                 } else {
                     console.error('Failed to send message:', await response.text());
-                    alert('Failed to send message to laptop server. Check server status.');
+                    alert('Failed to send message. Check server status.');
                 }
 
             } catch (error) {
                 console.error('Error sending message:', error);
-                alert('An error occurred while sending the message to laptop server.');
+                alert('An error occurred while sending the message.');
             }
         }
 
-        // Load messages when the page loads
         document.addEventListener('DOMContentLoaded', fetchMessages);
 
-        // Optional: Polling to auto-refresh messages every few seconds
-        setInterval(fetchMessages, 3000); // Refresh every 3 seconds
+        setInterval(fetchMessages, 3000);
     </script>
 </body>
 </html>

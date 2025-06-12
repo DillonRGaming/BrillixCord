@@ -2,9 +2,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const messagesFilePath = path.join(__dirname, 'data', 'messages.json'); // Path to messages.json
+const messagesFilePath = path.join(__dirname, 'data', 'messages.json');
 
-// Function to read messages from file
 function readMessages() {
     try {
         if (fs.existsSync(messagesFilePath)) {
@@ -14,10 +13,9 @@ function readMessages() {
     } catch (e) {
         console.error('Error reading messages.json:', e);
     }
-    return []; // Return empty array if file doesn't exist or is invalid
+    return [];
 }
 
-// Function to write messages to file
 function writeMessages(messages) {
     try {
         fs.writeFileSync(messagesFilePath, JSON.stringify(messages, null, 2), 'utf8');
@@ -27,12 +25,10 @@ function writeMessages(messages) {
 }
 
 const server = http.createServer((req, res) => {
-    // Enable CORS for Vercel frontend
-    res.setHeader('Access-Control-Allow-Origin', '*'); // Allow requests from any origin
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    // Handle preflight OPTIONS requests
     if (req.method === 'OPTIONS') {
         res.writeHead(204);
         res.end();
@@ -47,12 +43,12 @@ const server = http.createServer((req, res) => {
         req.on('end', () => {
             try {
                 const parsedBody = JSON.parse(body);
-                const message = parsedBody.message; // Expecting { message: "..." }
+                const message = parsedBody.message;
 
                 if (message && typeof message === 'string' && message.trim() !== '') {
                     let messages = readMessages();
-                    messages.push(message.trim()); // Add new message
-                    writeMessages(messages); // Save all messages
+                    messages.push(message.trim());
+                    writeMessages(messages);
                     console.log('Received and saved:', message);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ status: 'Message received and saved.' }));
@@ -67,10 +63,9 @@ const server = http.createServer((req, res) => {
             }
         });
     } else if (req.method === 'GET') {
-        // Read and return all messages
         const messages = readMessages();
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(messages)); // Return messages as JSON array
+        res.end(JSON.stringify(messages));
     } else {
         res.writeHead(405, { 'Content-Type': 'text/plain' });
         res.end('Method Not Allowed');
