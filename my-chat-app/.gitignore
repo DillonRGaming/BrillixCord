@@ -1,0 +1,3 @@
+﻿node_modules/
+messages.json  # Do NOT commit your local messages file to GitHub/Vercel
+.vercel/

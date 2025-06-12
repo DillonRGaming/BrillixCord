@@ -1,0 +1,87 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Laptop Chat</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <h1>Laptop-Hosted Chat App</h1>
+        <div class="messages-display" id="messages-display">
+            <!-- Messages will load here -->
+        </div>
+        <div class="message-input-area">
+            <input type="text" id="message-input" placeholder="Type your message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const messagesDisplay = document.getElementById('messages-display');
+        const messageInput = document.getElementById('message-input');
+        // IMPORTANT: You MUST replace this with YOUR PUBLIC IP and PORT 3000
+        // Example: 'http://82.42.13.75:3000'
+        // This will only work if your laptop server is running and port forwarding is set up.
+        const SERVER_URL = 'http://YOUR_PUBLIC_IP:3000'; // <<<<<<<<<< CHANGE THIS
+
+        // Function to fetch and display messages
+        async function fetchMessages() {
+            try {
+                // We're sending a GET request to the same server URL
+                const response = await fetch(SERVER_URL);
+                const messages = await response.json(); // Expect an array of messages
+
+                messagesDisplay.innerHTML = ''; // Clear existing messages
+                messages.forEach(msg => {
+                    const msgElement = document.createElement('div');
+                    msgElement.classList.add('message-item');
+                    msgElement.textContent = msg; // Display the message content
+                    messagesDisplay.appendChild(msgElement);
+                });
+                // Scroll to the bottom to show latest messages
+                messagesDisplay.scrollTop = messagesDisplay.scrollHeight;
+
+            } catch (error) {
+                console.error('Error fetching messages:', error);
+                messagesDisplay.innerHTML = '<div class="error-message">Could not load messages from laptop server. Make sure it\'s running and port forwarding is correct.</div>';
+            }
+        }
+
+        // Function to send a new message
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return; // Don't send empty messages
+
+            try {
+                const response = await fetch(SERVER_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json' // Send message as JSON
+                    },
+                    body: JSON.stringify({ message: message }) // Wrap message in JSON object
+                });
+
+                if (response.ok) {
+                    messageInput.value = ''; // Clear input field
+                    fetchMessages(); // Refresh messages to show the new one
+                } else {
+                    console.error('Failed to send message:', await response.text());
+                    alert('Failed to send message to laptop server. Check server status.');
+                }
+
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('An error occurred while sending the message to laptop server.');
+            }
+        }
+
+        // Load messages when the page loads
+        document.addEventListener('DOMContentLoaded', fetchMessages);
+
+        // Optional: Polling to auto-refresh messages every few seconds
+        setInterval(fetchMessages, 3000); // Refresh every 3 seconds
+    </script>
+</body>
+</html>
